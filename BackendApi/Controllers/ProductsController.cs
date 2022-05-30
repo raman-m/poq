@@ -3,7 +3,7 @@
 namespace Poq.BackendApi.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("products")]
     public class ProductsController : ControllerBase
     {
         private readonly ILogger<ProductsController> _logger;
@@ -22,6 +22,16 @@ namespace Poq.BackendApi.Controllers
                 Name = nameof(Product) + index
             })
             .ToArray();
+        }
+
+        // GET: /products/filter
+        // GET: /filter
+        [HttpGet]
+        [Route("filter")]
+        [Route("/filter")]
+        public IEnumerable<Product> Filter(int? maxprice, string? size, string? highlight)
+        {
+            return Enumerable.Empty<Product>();
         }
     }
 }

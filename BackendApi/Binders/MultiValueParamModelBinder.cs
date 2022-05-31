@@ -25,8 +25,6 @@ namespace Poq.BackendApi.Binders
 
             bindingContext.ModelState.SetModelValue(modelName, valueProviderResult);
 
-            var values = string.Empty;
-
             // Collection format is "multi": multiple parameters with the same name
             if (valueProviderResult.Length > 1)
             {
@@ -38,7 +36,7 @@ namespace Poq.BackendApi.Binders
             }
 
             // Collection format is not "multi" because of single parameter
-            values = valueProviderResult.FirstValue;
+            var values = valueProviderResult.FirstValue;
 
             if (string.IsNullOrEmpty(values))
                 return Task.CompletedTask;
@@ -71,7 +69,7 @@ namespace Poq.BackendApi.Binders
             return Task.CompletedTask;
         }
 
-        private bool DetectSeparator(string source, out char? separator)
+        public static bool DetectSeparator(string source, out char? separator)
         {
             separator = null;
 

@@ -7,7 +7,7 @@ namespace Poq.BackendApi.Models
     /// Array-like collection object which compatible to Swagger multi-value parameter.
     /// <para>Swagger Docs: <see href="https://swagger.io/docs/specification/2-0/describing-parameters/#array">Array and Multi-Value Parameters</see></para>
     /// </summary>
-    public class MultiValueParam : List<string>
+    public class MultiValueParam : List<string>, IMultiValueParam
     {
         protected MultiValueParam() { }
 
@@ -30,7 +30,7 @@ namespace Poq.BackendApi.Models
             var elements = source
                 .Split(separator)
                 .Where(s => !string.IsNullOrEmpty(s));
-            
+
             AddRange(elements);
         }
 

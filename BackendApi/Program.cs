@@ -1,3 +1,5 @@
+using Poq.BackendApi.Binders;
+
 namespace Poq.BackendApi
 {
     public class Program
@@ -6,12 +8,18 @@ namespace Poq.BackendApi
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            #region Add services to the DI-container.
 
-            builder.Services.AddControllers();
+            var services = builder.Services;
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            services.AddEndpointsApiExplorer();
+            services.AddSwaggerGen();
+
+            // Add application services
+            ConfigureServices(services);
+
+            #endregion
 
             var app = builder.Build();
 
@@ -29,6 +37,14 @@ namespace Poq.BackendApi
             app.MapControllers();
 
             app.Run();
+        }
+
+        private static void ConfigureServices(IServiceCollection services)
+        {
+            services.AddControllers(options =>
+            {
+                options.ModelBinderProviders.Insert(0, new MultiValueParamModelBinderProvider());
+            });
         }
     }
 }

@@ -34,7 +34,7 @@ namespace Poq.BackendApi.Controllers
         public IEnumerable<Product> Filter(
             [FromQuery] int? maxprice, 
             [FromQuery] string? size,
-            [FromQuery, ModelBinder(typeof(MultiValueParamModelBinder))] MultiValueParam? highlight)
+            [FromQuery] MultiValueParam? highlight)
         {
             return Enumerable.Empty<Product>();
         }

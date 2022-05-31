@@ -1,4 +1,4 @@
-﻿namespace Poq.BackendApi
+﻿namespace Poq.BackendApi.Models
 {
     public class Product
     {

@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Poq.BackendApi.Binders;
+using Poq.BackendApi.Models;
 
 namespace Poq.BackendApi.Controllers
 {
@@ -29,7 +31,10 @@ namespace Poq.BackendApi.Controllers
         [HttpGet]
         [Route("filter")]
         [Route("/filter")]
-        public IEnumerable<Product> Filter(int? maxprice, string? size, string? highlight)
+        public IEnumerable<Product> Filter(
+            [FromQuery] int? maxprice, 
+            [FromQuery] string? size,
+            [FromQuery, ModelBinder(typeof(MultiValueParamModelBinder))] MultiValueParam? highlight)
         {
             return Enumerable.Empty<Product>();
         }

@@ -9,6 +9,11 @@ namespace Poq.BackendApi.Models
     /// </summary>
     public class MultiValueParam : List<string>
     {
+        protected MultiValueParam() { }
+
+        public MultiValueParam(IEnumerable<string> collection)
+            : base(collection) { }
+
         public void Parse(string source, char separator)
         {
             if (string.IsNullOrEmpty(source))

@@ -3,8 +3,14 @@ using Poq.BackendApi.Models;
 
 namespace Poq.BackendApi.Binders
 {
+    /// <summary>
+    /// Model binder for the <see cref="MultiValueParam"/> collections to follow Swagger spec.
+    /// <para>Array Swagger specification: <see href="https://swagger.io/docs/specification/2-0/describing-parameters/#array">Array and Multi-Value Parameters</see></para>
+    /// </summary>
     public class MultiValueParamModelBinder : IModelBinder
     {
+        public const char DefaultCollectionFormatSeparator = ',';
+
         public Task BindModelAsync(ModelBindingContext bindingContext)
         {
             if (bindingContext == null)
@@ -19,7 +25,20 @@ namespace Poq.BackendApi.Binders
 
             bindingContext.ModelState.SetModelValue(modelName, valueProviderResult);
 
-            var values = valueProviderResult.FirstValue;
+            var values = string.Empty;
+
+            // Collection format is "multi": multiple parameters with the same name
+            if (valueProviderResult.Length > 1)
+            {
+                // No need to parse. Enumerate from value provider
+                var fastModel = new MultiValueParam(valueProviderResult);
+
+                bindingContext.Result = ModelBindingResult.Success(fastModel);
+                return Task.CompletedTask;
+            }
+
+            // Collection format is not "multi" because of single parameter
+            values = valueProviderResult.FirstValue;
 
             if (string.IsNullOrEmpty(values))
                 return Task.CompletedTask;
@@ -29,7 +48,7 @@ namespace Poq.BackendApi.Binders
             if (!DetectSeparator(values, out char? separator))
             {
                 bindingContext.ModelState.TryAddModelError(modelName, "[1] Cannot detect values separator of Swagger collection format.");
-                separator = ','; // assume csv (default) collection format for successful fallback
+                separator = DefaultCollectionFormatSeparator; // assume csv (default) collection format for successful fallback
             }
 
             // Optimistic parsing. There is no internal type parsing, cause there is no sense to parse string to a string.
@@ -58,7 +77,7 @@ namespace Poq.BackendApi.Binders
             if (string.IsNullOrEmpty(source))
                 return false;
 
-            // Swagger "collectionFormat" specification: https://swagger.io/docs/specification/2-0/describing-parameters/#array
+            // Swagger "collectionFormat" table with definitions
             const string candidates = @", \|";
 
             foreach (char candidate in candidates)

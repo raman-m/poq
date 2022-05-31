@@ -47,14 +47,15 @@ namespace Poq.BackendApi.Binders
 
             if (!DetectSeparator(values, out char? separator))
             {
-                bindingContext.ModelState.TryAddModelError(modelName, "[1] Cannot detect values separator of Swagger collection format.");
-                separator = DefaultCollectionFormatSeparator; // assume csv (default) collection format for successful fallback
+                // Cannot detect values separator of Swagger collection format.
+                // Let csv (default) collection format for successful fallback
+                separator = DefaultCollectionFormatSeparator;
             }
 
             // Optimistic parsing. There is no internal type parsing, cause there is no sense to parse string to a string.
             if (!MultiValueParam.TryParse(values, separator.Value, out MultiValueParam collection))
             {
-                bindingContext.ModelState.TryAddModelError(modelName, "[2] Optimistic parsing has failed.");
+                bindingContext.ModelState.TryAddModelError(modelName, "[1] Optimistic parsing has failed.");
                 return Task.CompletedTask;
             }
 

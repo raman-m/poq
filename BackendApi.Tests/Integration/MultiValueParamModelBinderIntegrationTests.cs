@@ -1,6 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -8,81 +12,12 @@ using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 using Poq.BackendApi.Binders;
 using Poq.BackendApi.Models;
-
-using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc.Abstractions;
-using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Xunit;
-
-using System.Collections;
-using System.Collections.ObjectModel;
-using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Abstractions;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Primitives;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
-using Moq;
-using Microsoft.AspNetCore.Routing;
 using System.Globalization;
 
-namespace Poq.BackendApi.Tests;
+namespace Poq.BackendApi.Tests.Integration;
 
-public class MultiValueParamModelBinderTests
+public class MultiValueParamModelBinderIntegrationTests
 {
-    [Fact]
-    public void DetectSeparator_NoSource_Failed()
-    {
-        // Arrange, Act
-        var isDetected = MultiValueParamModelBinder.DetectSeparator(string.Empty, out char? separator);
-
-        // Assert
-        Assert.Null(separator);
-        Assert.False(isDetected);
-    }
-
-    [Fact]
-    public void DetectSeparator_UknownSeparator_Failed()
-    {
-        // Arrange, Act
-        var isDetected = MultiValueParamModelBinder.DetectSeparator("1#2#3", out char? separator);
-
-        // Assert
-        Assert.Null(separator);
-        Assert.False(isDetected);
-    }
-
-    [Fact]
-    public void DetectSeparator_ValidSource_Success()
-    {
-        // Arrange, Act
-        var isDetected = MultiValueParamModelBinder.DetectSeparator("1,2,3", out char? separator);
-
-        // Assert
-        Assert.NotNull(separator);
-        Assert.True(isDetected);
-        Assert.Equal(',', separator.Value);
-    }
-
-    [Fact]
-    public async Task BindModelAsync_NoBindingContext_ThrowsException()
-    {
-        // Arrange
-        var service = new MultiValueParamModelBinder();
-        ModelBindingContext noContext = null;
-
-        // Act, Assert
-        var exception = await Assert.ThrowsAsync<ArgumentNullException>(
-            () => service.BindModelAsync(noContext));
-
-        Assert.NotNull(exception);
-        Assert.Equal("bindingContext", exception.ParamName);
-    }
-
     [Fact]
     public async Task BindModelAsync_NoValueProviderResult_NoResult()
     {

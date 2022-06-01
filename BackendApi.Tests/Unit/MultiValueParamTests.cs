@@ -1,6 +1,6 @@
 using Poq.BackendApi.Models;
 
-namespace Poq.BackendApi.Tests;
+namespace Poq.BackendApi.Tests.Unit;
 
 public class MultiValueParamTests
 {

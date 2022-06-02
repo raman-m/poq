@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Poq.BackendApi.Binders;
 using Poq.BackendApi.Models;
+using Poq.BackendApi.Services.Interfaces;
+using System.Net;
 
 namespace Poq.BackendApi.Controllers
 {
@@ -8,22 +9,33 @@ namespace Poq.BackendApi.Controllers
     [Route("products")]
     public class ProductsController : ControllerBase
     {
+        private readonly IProductsRepository _repository;
         private readonly ILogger<ProductsController> _logger;
 
-        public ProductsController(ILogger<ProductsController> logger)
+        public ProductsController(
+            IProductsRepository repository,
+            ILogger<ProductsController> logger)
         {
-            _logger = logger;
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         // GET: /products
         [HttpGet(Name = "GetProducts")]
-        public IEnumerable<Product> Get()
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(IEnumerable<Product>), (int)HttpStatusCode.OK)]
+        public async Task<IEnumerable<Product>> Get()
         {
-            return Enumerable.Range(1, 3).Select(index => new Product
+            try
             {
-                Name = nameof(Product) + index
-            })
-            .ToArray();
+                var products = await _repository.SelectAsync();
+                return products;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "{Controller} : \"{Message}\"", nameof(ProductsController), e.Message);
+            }
+            return Enumerable.Empty<Product>();
         }
 
         // GET: /products/filter

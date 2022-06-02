@@ -1,4 +1,8 @@
 using Poq.BackendApi.Binders;
+using Poq.BackendApi.Services;
+using Poq.BackendApi.Services.Interfaces;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Poq.BackendApi
 {
@@ -15,6 +19,20 @@ namespace Poq.BackendApi
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen();
+
+            services.AddControllers(options =>
+            {
+                options.ModelBinderProviders.Insert(0, new MultiValueParamModelBinderProvider());
+            })
+            .AddJsonOptions(options =>
+            {
+                options.AllowInputFormatterExceptionMessages = true;
+
+                var jOptions = options.JsonSerializerOptions;
+                jOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, true));
+                jOptions.PropertyNameCaseInsensitive = true;
+                jOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            });
 
             // Add application services
             ConfigureServices(services);
@@ -41,10 +59,8 @@ namespace Poq.BackendApi
 
         private static void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers(options =>
-            {
-                options.ModelBinderProviders.Insert(0, new MultiValueParamModelBinderProvider());
-            });
+            services.AddSingleton<IProductsRepository, ProductsRepository>(); // has cross request state
+            services.AddTransient<IMockyIoApiService, MockyIoApiService>(); // web API integration, so instantiation per each call
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Poq.BackendApi.Models;
 using Poq.BackendApi.Services.Interfaces;
+using System.Linq;
 using System.Net;
 
 namespace Poq.BackendApi.Controllers
@@ -45,15 +46,25 @@ namespace Poq.BackendApi.Controllers
         [ProducesResponseType(typeof(IEnumerable<Product>), (int)HttpStatusCode.OK)]
         public async Task<IEnumerable<Product>> FilterAsync(
             [FromQuery] int? maxprice, 
-            [FromQuery] string? size,
+            [FromQuery] Sizes? size,
             [FromQuery] MultiValueParam? highlight)
         {
             try
             {
-                if (maxprice == null && string.IsNullOrEmpty(size) && highlight == null)
+                if (!maxprice.HasValue && !size.HasValue && highlight == null)
                 {
                     // Filter is empty, so just return all products
                     return await _repository.SelectAsync();
+                }
+                else if (highlight == null)
+                {
+                    // No need to highlight. Filter products
+                    var filtered = await _repository.SelectAsync(
+                        p => (maxprice.HasValue && size.HasValue && p.Price <= maxprice && p.Sizes.Contains(size.Value))
+                            || (maxprice.HasValue && !size.HasValue && p.Price <= maxprice)
+                            || (!maxprice.HasValue && size.HasValue && p.Sizes.Contains(size.Value))
+                    );
+                    return filtered;
                 }
             }
             catch (Exception e)

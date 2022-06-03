@@ -6,8 +6,8 @@ namespace Poq.BackendApi.Services.Interfaces
     {
         Task<int> CountAsync();
         Task<Product> GetAsync(int id);
-        Task<IEnumerable<Product>> SelectAsync();
-        Task<IEnumerable<Product>> SelectAsync(Func<Product, bool> predicate);
+        Task<List<Product>> SelectAsync();
+        Task<List<Product>> SelectAsync(Func<Product, bool> predicate);
         Task<bool> WarmupAsync();
     }
 }

@@ -62,28 +62,28 @@ public class ProductsRepository : IProductsRepository
         return warmedUp;
     }
 
-    public async Task<IEnumerable<Product>> SelectAsync()
+    public async Task<List<Product>> SelectAsync()
     {
         await WarmupAsync();
 
-        Product[] array = productsTable.Values
-            .ToArray(); // make new instance
+        var list = productsTable.Values
+            .ToList(); // make new instance
 
-        return array;
+        return list;
     }
 
-    public async Task<IEnumerable<Product>> SelectAsync(Func<Product, bool> predicate)
+    public async Task<List<Product>> SelectAsync(Func<Product, bool> predicate)
     {
         await WarmupAsync();
 
-        return productsTable.Values.Where(predicate);
+        return productsTable.Values.Where(predicate).ToList();
     }
 
     public async Task<Product> GetAsync(int id)
     {
         await WarmupAsync();
 
-        bool found = productsTable.TryGetValue(id, out Product? product);
+        bool found = productsTable.TryGetValue(id, out Product product);
 
         return product;
     }

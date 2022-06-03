@@ -25,20 +25,20 @@ public class ProductsRepository : IProductsRepository
 
     private bool warmedUp = false;
 
-    public async Task Warmup()
+    public async Task<bool> WarmupAsync()
     {
-        if (warmedUp) return;
+        if (warmedUp) return warmedUp;
 
         productsTable.Clear();
         productsTableIndex = 0;
 
         var response = await mockyIoService.GetAsync();
 
-        if (response == null || response.Products == null)
+        if (response == null || response.Products == null || response.Products.Count() == 0)
         {
             warmedUp = false;
-            logger.LogDebug($"Warming up has failed. Cannot get data from the remote web API.");
-            return;
+            logger.LogWarning($"Warming up has failed. Cannot get data from the remote web API.");
+            return warmedUp;
         }
 
         bool Ok = true;
@@ -55,15 +55,16 @@ public class ProductsRepository : IProductsRepository
         {
             logger.LogDebug("Warming up has failed. Response entities count: {ProductsCount}. Actual number of rows in the table: {RowsCount}",
                 productsCount, productsTable.Count);
-            return;
+            return warmedUp;
         }
 
         warmedUp = true;
+        return warmedUp;
     }
 
     public async Task<IEnumerable<Product>> SelectAsync()
     {
-        await Warmup();
+        await WarmupAsync();
 
         Product[] array = productsTable.Values
             .ToArray(); // make new instance
@@ -73,14 +74,14 @@ public class ProductsRepository : IProductsRepository
 
     public async Task<IEnumerable<Product>> SelectAsync(Func<Product, bool> predicate)
     {
-        await Warmup();
+        await WarmupAsync();
 
         return productsTable.Values.Where(predicate);
     }
 
     public async Task<Product> GetAsync(int id)
     {
-        await Warmup();
+        await WarmupAsync();
 
         bool found = productsTable.TryGetValue(id, out Product? product);
 
@@ -89,7 +90,7 @@ public class ProductsRepository : IProductsRepository
 
     public async Task<int> CountAsync()
     {
-        await Warmup();
+        await WarmupAsync();
 
         return productsTable.Count;
     }

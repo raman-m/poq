@@ -4,6 +4,6 @@ namespace Poq.BackendApi.Services.Interfaces
 {
     public interface IMockyIoApiService
     {
-        Task<GetResponse?> GetAsync();
+        Task<GetResponse?> GetAsync(string? url = null);
     }
 }

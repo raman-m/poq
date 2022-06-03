@@ -61,6 +61,7 @@ namespace Poq.BackendApi
         {
             services.AddSingleton<IProductsRepository, ProductsRepository>(); // has cross request state
             services.AddTransient<IMockyIoApiService, MockyIoApiService>(); // web API integration, so instantiation per each call
+            services.AddHttpClient(nameof(MockyIoApiService)); // to keep performance of HTTP Client high
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Poq.BackendApi.Controllers
         [HttpGet(Name = "GetProducts")]
         [Produces("application/json")]
         [ProducesResponseType(typeof(IEnumerable<Product>), (int)HttpStatusCode.OK)]
-        public async Task<IEnumerable<Product>> Get()
+        public async Task<IEnumerable<Product>> GetAsync()
         {
             try
             {
@@ -38,16 +38,28 @@ namespace Poq.BackendApi.Controllers
             return Enumerable.Empty<Product>();
         }
 
-        // GET: /products/filter
         // GET: /filter
         [HttpGet]
-        [Route("filter")]
         [Route("/filter")]
-        public IEnumerable<Product> Filter(
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(IEnumerable<Product>), (int)HttpStatusCode.OK)]
+        public async Task<IEnumerable<Product>> FilterAsync(
             [FromQuery] int? maxprice, 
             [FromQuery] string? size,
             [FromQuery] MultiValueParam? highlight)
         {
+            try
+            {
+                if (maxprice == null && string.IsNullOrEmpty(size) && highlight == null)
+                {
+                    // Filter is empty, so just return all products
+                    return await _repository.SelectAsync();
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "{Controller} : \"{Message}\"", nameof(ProductsController), e.Message);
+            }
             return Enumerable.Empty<Product>();
         }
     }

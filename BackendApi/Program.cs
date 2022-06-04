@@ -60,6 +60,7 @@ namespace Poq.BackendApi
         private static void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton<IProductsRepository, ProductsRepository>(); // has cross request state
+            services.AddScoped<IProductsService, ProductsService>();
             services.AddTransient<IMockyIoApiService, MockyIoApiService>(); // web API integration, so instantiation per each call
             services.AddHttpClient(nameof(MockyIoApiService)); // to keep performance of HTTP Client high
         }

@@ -10,14 +10,14 @@ namespace Poq.BackendApi.Controllers
     [Route("products")]
     public class ProductsController : ControllerBase
     {
-        private readonly IProductsRepository _repository;
+        private readonly IProductsService _service;
         private readonly ILogger<ProductsController> _logger;
 
         public ProductsController(
-            IProductsRepository repository,
+            IProductsService service,
             ILogger<ProductsController> logger)
         {
-            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _service = service ?? throw new ArgumentNullException(nameof(service));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -29,7 +29,7 @@ namespace Poq.BackendApi.Controllers
         {
             try
             {
-                var products = await _repository.SelectAsync();
+                var products = await _service.AllAsync();
                 return products;
             }
             catch (Exception e)
@@ -49,47 +49,22 @@ namespace Poq.BackendApi.Controllers
             [FromQuery] Sizes? size,
             [FromQuery] MultiValueParam? highlight)
         {
-            var products = new List<Product>();
             try
             {
                 if (!minprice.HasValue && !maxprice.HasValue && !size.HasValue)
                 {
                     // Filter is empty, so just return all products
-                    return await _repository.SelectAsync();
+                    return await _service.AllAsync();
                 }
 
-                products = await _repository.SelectAsync(
-                    p =>
-                    {
-                        if (minprice.HasValue && maxprice.HasValue && size.HasValue)
-                            return minprice <= p.Price && p.Price <= maxprice && p.Sizes.Contains(size.Value);
-
-                        if (minprice.HasValue && maxprice.HasValue)
-                            return minprice <= p.Price && p.Price <= maxprice;
-
-                        if (minprice.HasValue && size.HasValue)
-                            return minprice <= p.Price && p.Sizes.Contains(size.Value);
-
-                        if (maxprice.HasValue && size.HasValue)
-                            return p.Price <= maxprice && p.Sizes.Contains(size.Value);
-
-                        if (minprice.HasValue)
-                            return minprice <= p.Price;
-
-                        if (maxprice.HasValue)
-                            return p.Price <= maxprice;
-
-                        if (size.HasValue)
-                            return p.Sizes.Contains(size.Value);
-
-                        return true;
-                    });
+                var collection = await _service.FilterAsync(minprice, maxprice, size);
+                return collection;
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "{Controller} : \"{Message}\"", nameof(ProductsController), e.Message);
             }
-            return products;
+            return Array.Empty<Product>();
         }
     }
 }

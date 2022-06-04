@@ -65,5 +65,15 @@ namespace Poq.BackendApi.Services
 
             return (min, max);
         }
+
+        public ICollection<Sizes> GetAllSizes(ICollection<Product> products)
+        {
+            var sizes = products
+                .SelectMany(x => x.Sizes)
+                .Distinct()
+                .ToArray();
+
+            return sizes;
+        }
     }
 }

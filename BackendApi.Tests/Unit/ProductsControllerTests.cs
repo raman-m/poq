@@ -21,7 +21,7 @@ namespace Poq.BackendApi.Tests.Unit
             sut = new ProductsController(productsServiceMock.Object, loggerMock.Object);
         }
 
-        private async Task AssertActionReturnsProductsAndCalculatesPricing(
+        private async Task<ProductsResponse> AssertActionReturnsProducts(
             Expression<Func<IProductsService, Task<ICollection<Product>>>> setupMethod,
             Func<Task<ProductsResponse>> actor)
         {
@@ -35,9 +35,6 @@ namespace Poq.BackendApi.Tests.Unit
             // AllAsync(), FilterAsync()
             productsServiceMock.Setup(setupMethod).ReturnsAsync(products);
 
-            int minPrice = 1, maxPrice = 10;
-            productsServiceMock.Setup(x => x.GetPricingStatistics(It.IsAny<ICollection<Product>>())).Returns((minPrice, maxPrice));
-
             // Act
             ProductsResponse actual = await actor.Invoke();
 
@@ -50,37 +47,134 @@ namespace Poq.BackendApi.Tests.Unit
             Assert.All(products,
                 p => Assert.Contains(actual.Products, x => x.Title == p.Title));
 
+            return actual;
+        }
+
+        private void ArrangeCalculatingPrices(out int minPrice, out int maxPrice)
+        {
+            minPrice = DateTime.Now.Second / 10;
+            maxPrice = minPrice + DateTime.Now.Second;
+            productsServiceMock.Setup(x => x.GetPricingStatistics(It.IsAny<ICollection<Product>>())).Returns((minPrice, maxPrice));
+        }
+
+        private void ArrangeGettingAllSizes()
+        {
+            productsServiceMock.Setup(x => x.GetAllSizes(It.IsAny<ICollection<Product>>()))
+                .Returns(new Sizes[] { Sizes.Small, Sizes.Medium });
+        }
+
+        private void AssertCalculatingPrices(int expectedMinPrice, int expectedMaxPrice, ProductsResponse actual)
+        {
             // Assert : Calculates pricing
             productsServiceMock.Verify(x => x.GetPricingStatistics(It.IsAny<ICollection<Product>>()));
-            Assert.Equal(minPrice, actual.MinPrice);
-            Assert.Equal(maxPrice, actual.MaxPrice);
+            Assert.Equal(expectedMinPrice, actual.MinPrice);
+            Assert.Equal(expectedMaxPrice, actual.MaxPrice);
+        }
+
+        private void AssertGettingAllSizes()
+        {
+            productsServiceMock.Verify(x => x.GetAllSizes(It.IsAny<ICollection<Product>>()));
         }
 
         [Fact]
-        public async Task GetAsync_BeHappy_ReturnsAllProductsAndCalculatesPricing()
+        public async Task GetAsync_BeHappy_ReturnsAllProducts()
         {
-            await AssertActionReturnsProductsAndCalculatesPricing(
-                x => x.AllAsync(),
-                () => sut.GetAsync()
+            await AssertActionReturnsProducts(x => x.AllAsync(),
+                () => sut.GetAsync() // Act
+            );
+        }
+
+        [Fact]
+        public async Task GetAsync_BeHappy_CalculatesPricing()
+        {
+            ArrangeCalculatingPrices(out int minPrice, out int maxPrice);
+
+            var actual = await AssertActionReturnsProducts(x => x.AllAsync(),
+                () => sut.GetAsync() // Act
+            );
+            AssertCalculatingPrices(minPrice, maxPrice, actual);
+        }
+
+        [Fact]
+        public async Task GetAsync_BeHappy_GetsAllSizes()
+        {
+            ArrangeCalculatingPrices(out int minPrice, out int maxPrice);
+            ArrangeGettingAllSizes();
+
+            var actual = await AssertActionReturnsProducts(x => x.AllAsync(),
+                () => sut.GetAsync() // Act
+            );
+            AssertCalculatingPrices(minPrice, maxPrice, actual);
+            AssertGettingAllSizes();
+        }
+
+        [Fact]
+        public async Task FilterAsync_BeHappy_ReturnsAllProducts()
+        {
+            await AssertActionReturnsProducts(x => x.AllAsync(),
+                () => sut.FilterAsync(null, null, null, null) // Act
             );
         }
 
         [Fact]
         public async Task FilterAsync_BeHappy_ReturnsAllProductsAndCalculatesPricing()
         {
-            await AssertActionReturnsProductsAndCalculatesPricing(
-                x => x.AllAsync(),
-                () => sut.FilterAsync(null, null, null, null)
+            ArrangeCalculatingPrices(out int minPrice, out int maxPrice);
+
+            var actual = await AssertActionReturnsProducts(x => x.AllAsync(),
+                () => sut.FilterAsync(null, null, null, null) // Act
+            );
+            AssertCalculatingPrices(minPrice, maxPrice, actual);
+        }
+
+        [Fact]
+        public async Task FilterAsync_BeHappy_ReturnsAllProductsAndGetsAllSizes()
+        {
+            ArrangeCalculatingPrices(out int minPrice, out int maxPrice);
+            ArrangeGettingAllSizes();
+
+            var actual = await AssertActionReturnsProducts(x => x.AllAsync(),
+                () => sut.FilterAsync(null, null, null, null) // Act
+            );
+
+            AssertCalculatingPrices(minPrice, maxPrice, actual);
+            AssertGettingAllSizes();
+        }
+
+        [Fact]
+        public async Task FilterAsync_BeHappy_FiltersProducts()
+        {
+            await AssertActionReturnsProducts(
+                x => x.FilterAsync(It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<Sizes?>()), // Arrange
+                () => sut.FilterAsync(0, 100, null, null) // Act
             );
         }
 
         [Fact]
-        public async Task FilterAsync_BeHappy_FiltersProductsAndCalculatesPricing()
+        public async Task FilterAsync_BeHappy_CalculatesPricing()
         {
-            await AssertActionReturnsProductsAndCalculatesPricing(
+            ArrangeCalculatingPrices(out int minPrice, out int maxPrice);
+
+            var actual = await AssertActionReturnsProducts(
                 x => x.FilterAsync(It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<Sizes?>()),
                 () => sut.FilterAsync(0, 100, null, null)
             );
+            AssertCalculatingPrices(minPrice, maxPrice, actual);
+        }
+
+        [Fact]
+        public async Task FilterAsync_BeHappy_GetsAllSizes()
+        {
+            ArrangeCalculatingPrices(out int minPrice, out int maxPrice);
+            ArrangeGettingAllSizes();
+
+            var actual = await AssertActionReturnsProducts(
+                x => x.FilterAsync(It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<Sizes?>()),
+                () => sut.FilterAsync(0, 100, null, null)
+            );
+
+            AssertCalculatingPrices(minPrice, maxPrice, actual);
+            AssertGettingAllSizes();
         }
     }
 }

@@ -35,6 +35,8 @@ namespace Poq.BackendApi.Controllers
                 var pricing = _service.GetPricingStatistics(collection);
                 model.MinPrice = pricing.Item1;
                 model.MaxPrice = pricing.Item2;
+
+                model.Sizes = _service.GetAllSizes(collection);
             }
             catch (Exception e)
             {
@@ -71,6 +73,8 @@ namespace Poq.BackendApi.Controllers
                 var pricing = _service.GetPricingStatistics(collection);
                 model.MinPrice = pricing.Item1;
                 model.MaxPrice = pricing.Item2;
+
+                model.Sizes = _service.GetAllSizes(collection);
             }
             catch (Exception e)
             {

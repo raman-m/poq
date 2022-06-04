@@ -56,7 +56,7 @@ namespace Poq.BackendApi.Tests.Unit
             productsRepositoryMock.Setup(x => x.SelectAsync()).ReturnsAsync(products);
 
             // Act
-            IEnumerable<Product> actual = await sut.FilterAsync(null, null, null);
+            IEnumerable<Product> actual = await sut.FilterAsync(null, null, null, null);
 
             // Assert
             Assert.NotNull(actual);
@@ -84,34 +84,64 @@ namespace Poq.BackendApi.Tests.Unit
                 .Callback<Func<Product, bool>>(x => predicate = x)
                 .ReturnsAsync(() => products.Where(predicate).ToList());
 
+            int minprice = 0, maxprice = 3;
+
             // Act #1
-            int maxprice = 2;
-            IEnumerable<Product> actual1 = await sut.FilterAsync(maxprice, null, null);
+            minprice = 3;
+            IEnumerable<Product> actual1 = await sut.FilterAsync(minprice, null, null, null);
 
             // Assert #1
             Assert.NotNull(actual1);
             Assert.True(actual1.Count() < products.Count);
-            Assert.All(actual1, p => Assert.True(p.Price <= maxprice));
-            Assert.Equal(2, actual1.Count());
+            Assert.All(actual1, p => Assert.True(p.Price >= minprice));
+            Assert.Single(actual1);
+            Assert.Contains(actual1, p => p.Title == "C");
 
             // Act #2
-            Sizes size = Sizes.Medium;
-            IEnumerable<Product> actual2 = await sut.FilterAsync(null, size, null);
+            maxprice = 2;
+            IEnumerable<Product> actual2 = await sut.FilterAsync(null, maxprice, null, null);
 
-            // Assert #1
+            // Assert #2
             Assert.NotNull(actual2);
             Assert.True(actual2.Count() < products.Count);
-            Assert.All(actual2, p => Assert.True(p.Sizes.Contains(size)));
+            Assert.All(actual2, p => Assert.True(p.Price <= maxprice));
             Assert.Equal(2, actual2.Count());
 
             // Act #3
-            IEnumerable<Product> actual3 = await sut.FilterAsync(maxprice, size, null);
+            minprice = 2;
+            maxprice = 3;
+            IEnumerable<Product> actual3 = await sut.FilterAsync(minprice, maxprice, null, null);
 
-            // Assert #1
+            // Assert #3
             Assert.NotNull(actual3);
             Assert.True(actual3.Count() < products.Count);
-            Assert.All(actual3, p => Assert.True(p.Sizes.Contains(size)));
-            Assert.Single(actual3);
+            Assert.All(actual3, p => Assert.True(p.Price >= minprice));
+            Assert.All(actual3, p => Assert.True(p.Price <= maxprice));
+            Assert.Equal(2, actual3.Count());
+            Assert.Contains(actual3, p => p.Title == "B");
+            Assert.Contains(actual3, p => p.Title == "C");
+
+            // Act #4
+            Sizes size = Sizes.Medium;
+            IEnumerable<Product> actual4 = await sut.FilterAsync(null, null, size, null);
+
+            // Assert #4
+            Assert.NotNull(actual4);
+            Assert.True(actual4.Count() < products.Count);
+            Assert.All(actual4, p => Assert.True(p.Sizes.Contains(size)));
+            Assert.Equal(2, actual4.Count());
+
+            // Act #5
+            maxprice = 3;
+            size = Sizes.Large;
+            IEnumerable<Product> actual5 = await sut.FilterAsync(null, maxprice, size, null);
+
+            // Assert #5
+            Assert.NotNull(actual5);
+            Assert.True(actual5.Count() < products.Count);
+            Assert.All(actual5, p => Assert.True(p.Price <= maxprice));
+            Assert.All(actual5, p => Assert.True(p.Sizes.Contains(size)));
+            Assert.Single(actual5);
         }
     }
 }

@@ -45,33 +45,51 @@ namespace Poq.BackendApi.Controllers
         [Produces("application/json")]
         [ProducesResponseType(typeof(IEnumerable<Product>), (int)HttpStatusCode.OK)]
         public async Task<IEnumerable<Product>> FilterAsync(
-            [FromQuery] int? maxprice, 
+            [FromQuery] int? minprice, [FromQuery] int? maxprice,
             [FromQuery] Sizes? size,
             [FromQuery] MultiValueParam? highlight)
         {
+            var products = new List<Product>();
             try
             {
-                if (!maxprice.HasValue && !size.HasValue && highlight == null)
+                if (!minprice.HasValue && !maxprice.HasValue && !size.HasValue)
                 {
                     // Filter is empty, so just return all products
                     return await _repository.SelectAsync();
                 }
-                else if (highlight == null)
-                {
-                    // No need to highlight. Filter products
-                    var filtered = await _repository.SelectAsync(
-                        p => (maxprice.HasValue && size.HasValue && p.Price <= maxprice && p.Sizes.Contains(size.Value))
-                            || (maxprice.HasValue && !size.HasValue && p.Price <= maxprice)
-                            || (!maxprice.HasValue && size.HasValue && p.Sizes.Contains(size.Value))
-                    );
-                    return filtered;
-                }
+
+                products = await _repository.SelectAsync(
+                    p =>
+                    {
+                        if (minprice.HasValue && maxprice.HasValue && size.HasValue)
+                            return minprice <= p.Price && p.Price <= maxprice && p.Sizes.Contains(size.Value);
+
+                        if (minprice.HasValue && maxprice.HasValue)
+                            return minprice <= p.Price && p.Price <= maxprice;
+
+                        if (minprice.HasValue && size.HasValue)
+                            return minprice <= p.Price && p.Sizes.Contains(size.Value);
+
+                        if (maxprice.HasValue && size.HasValue)
+                            return p.Price <= maxprice && p.Sizes.Contains(size.Value);
+
+                        if (minprice.HasValue)
+                            return minprice <= p.Price;
+
+                        if (maxprice.HasValue)
+                            return p.Price <= maxprice;
+
+                        if (size.HasValue)
+                            return p.Sizes.Contains(size.Value);
+
+                        return true;
+                    });
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "{Controller} : \"{Message}\"", nameof(ProductsController), e.Message);
             }
-            return Enumerable.Empty<Product>();
+            return products;
         }
     }
 }

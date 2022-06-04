@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Poq.BackendApi.Models;
 using Poq.BackendApi.Services.Interfaces;
-using System.Linq;
 using System.Net;
 
 namespace Poq.BackendApi.Controllers
@@ -24,47 +23,52 @@ namespace Poq.BackendApi.Controllers
         // GET: /products
         [HttpGet(Name = "GetProducts")]
         [Produces("application/json")]
-        [ProducesResponseType(typeof(IEnumerable<Product>), (int)HttpStatusCode.OK)]
-        public async Task<IEnumerable<Product>> GetAsync()
+        [ProducesResponseType(typeof(ProductsResponse), (int)HttpStatusCode.OK)]
+        public async Task<ProductsResponse> GetAsync()
         {
+            var model = new ProductsResponse();
             try
             {
-                var products = await _service.AllAsync();
-                return products;
+                var collection = await _service.AllAsync();
+                model.Products = collection;
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "{Controller} : \"{Message}\"", nameof(ProductsController), e.Message);
             }
-            return Enumerable.Empty<Product>();
+            return model;
         }
 
         // GET: /filter
         [HttpGet]
         [Route("/filter")]
         [Produces("application/json")]
-        [ProducesResponseType(typeof(IEnumerable<Product>), (int)HttpStatusCode.OK)]
-        public async Task<IEnumerable<Product>> FilterAsync(
+        [ProducesResponseType(typeof(ProductsResponse), (int)HttpStatusCode.OK)]
+        public async Task<ProductsResponse> FilterAsync(
             [FromQuery] int? minprice, [FromQuery] int? maxprice,
             [FromQuery] Sizes? size,
             [FromQuery] MultiValueParam? highlight)
         {
+            var model = new ProductsResponse();
             try
             {
+                ICollection<Product> collection = Array.Empty<Product>();
                 if (!minprice.HasValue && !maxprice.HasValue && !size.HasValue)
                 {
                     // Filter is empty, so just return all products
-                    return await _service.AllAsync();
+                    collection = await _service.AllAsync();
                 }
-
-                var collection = await _service.FilterAsync(minprice, maxprice, size);
-                return collection;
+                else
+                {
+                    collection = await _service.FilterAsync(minprice, maxprice, size);
+                }
+                model.Products = collection;
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "{Controller} : \"{Message}\"", nameof(ProductsController), e.Message);
             }
-            return Array.Empty<Product>();
+            return model;
         }
     }
 }

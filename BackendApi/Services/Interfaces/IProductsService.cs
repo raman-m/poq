@@ -6,5 +6,6 @@ namespace Poq.BackendApi.Services.Interfaces
     {
         Task<ICollection<Product>> AllAsync();
         Task<ICollection<Product>> FilterAsync(int? minPrice, int? maxPrice, Sizes? size);
+        (int, int) GetPricingStatistics(ICollection<Product> products);
     }
 }

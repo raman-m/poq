@@ -31,6 +31,10 @@ namespace Poq.BackendApi.Controllers
             {
                 var collection = await _service.AllAsync();
                 model.Products = collection;
+
+                var pricing = _service.GetPricingStatistics(collection);
+                model.MinPrice = pricing.Item1;
+                model.MaxPrice = pricing.Item2;
             }
             catch (Exception e)
             {
@@ -63,6 +67,10 @@ namespace Poq.BackendApi.Controllers
                     collection = await _service.FilterAsync(minprice, maxprice, size);
                 }
                 model.Products = collection;
+
+                var pricing = _service.GetPricingStatistics(collection);
+                model.MinPrice = pricing.Item1;
+                model.MaxPrice = pricing.Item2;
             }
             catch (Exception e)
             {

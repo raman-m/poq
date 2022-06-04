@@ -53,5 +53,17 @@ namespace Poq.BackendApi.Services
 
             return enumerator.ToList();
         }
+
+        public (int, int) GetPricingStatistics(ICollection<Product> products)
+        {
+            int min = 0, max = 0;
+            if (products == null || products.Count == 0)
+                return (min, max);
+
+            min = products.Min(x => x.Price);
+            max = products.Max(x => x.Price);
+
+            return (min, max);
+        }
     }
 }

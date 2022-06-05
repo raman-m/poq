@@ -28,9 +28,9 @@ namespace Poq.BackendApi.Tests.Unit
             // Arrange
             var products = new List<Product>
             {
-                    new Product { Title = "A" },
-                    new Product { Title = "B" },
-                    new Product { Title = "C" },
+                    new Product { Title = "A", Description = "A." },
+                    new Product { Title = "B", Description = "B B." },
+                    new Product { Title = "C", Description = "C C C." },
             };
             // AllAsync(), FilterAsync()
             productsServiceMock.Setup(setupMethod).ReturnsAsync(products);
@@ -63,6 +63,12 @@ namespace Poq.BackendApi.Tests.Unit
                 .Returns(new Sizes[] { Sizes.Small, Sizes.Medium });
         }
 
+        private void ArrangeGettingCommonWords(ICollection<string> topWords)
+        {
+            productsServiceMock.Setup(x => x.GetCommonWordsAsync(It.IsAny<Dictionary<string, int>>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                .ReturnsAsync(topWords);
+        }
+
         private void AssertCalculatingPrices(int expectedMinPrice, int expectedMaxPrice, ProductsResponse actual)
         {
             // Assert : Calculates pricing
@@ -74,6 +80,13 @@ namespace Poq.BackendApi.Tests.Unit
         private void AssertGettingAllSizes()
         {
             productsServiceMock.Verify(x => x.GetAllSizes(It.IsAny<ICollection<Product>>()));
+        }
+
+        private void AssertGettingCommonWords(IEnumerable<string> expectedWords, IEnumerable<string> actualWords)
+        {
+            productsServiceMock.Verify(x => x.GetCommonWordsAsync(It.IsAny<Dictionary<string, int>>(), It.IsAny<int?>(), It.IsAny<int?>()));
+            Assert.All(expectedWords,
+                eword => Assert.Contains(eword, actualWords));
         }
 
         [Fact]
@@ -106,6 +119,22 @@ namespace Poq.BackendApi.Tests.Unit
             );
             AssertCalculatingPrices(minPrice, maxPrice, actual);
             AssertGettingAllSizes();
+        }
+
+        [Fact]
+        public async Task GetAsync_BeHappy_GetsCommonWords()
+        {
+            ArrangeCalculatingPrices(out int minPrice, out int maxPrice);
+            ArrangeGettingAllSizes();
+            var expectedWords = new string[] { "C", "B", "A" };
+            ArrangeGettingCommonWords(expectedWords);
+
+            var actual = await AssertActionReturnsProducts(x => x.AllAsync(),
+                () => sut.GetAsync() // Act
+            );
+            AssertCalculatingPrices(minPrice, maxPrice, actual);
+            AssertGettingAllSizes();
+            AssertGettingCommonWords(expectedWords, actual.CommonWords);
         }
 
         [Fact]
@@ -175,6 +204,24 @@ namespace Poq.BackendApi.Tests.Unit
 
             AssertCalculatingPrices(minPrice, maxPrice, actual);
             AssertGettingAllSizes();
+        }
+
+        [Fact]
+        public async Task FilterAsync_BeHappy_GetsCommonWords()
+        {
+            ArrangeCalculatingPrices(out int minPrice, out int maxPrice);
+            ArrangeGettingAllSizes();
+            var expectedWords = new string[] { "C", "B", "A" };
+            ArrangeGettingCommonWords(expectedWords);
+
+            var actual = await AssertActionReturnsProducts(
+                x => x.FilterAsync(It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<Sizes?>()),
+                () => sut.FilterAsync(0, 100, null, null)
+            );
+
+            AssertCalculatingPrices(minPrice, maxPrice, actual);
+            AssertGettingAllSizes();
+            AssertGettingCommonWords(expectedWords, actual.CommonWords);
         }
     }
 }

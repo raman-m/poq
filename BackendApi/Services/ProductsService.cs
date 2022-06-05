@@ -1,5 +1,6 @@
 ﻿using Poq.BackendApi.Models;
 using Poq.BackendApi.Services.Interfaces;
+using System.Linq;
 
 namespace Poq.BackendApi.Services
 {
@@ -74,6 +75,41 @@ namespace Poq.BackendApi.Services
                 .ToArray();
 
             return sizes;
+        }
+
+        public async Task<ICollection<string>> GetCommonWordsAsync(Dictionary<string, int>? statistics = null, int? skip = null, int? take = null)
+        {
+            var enumerator = await repository.SelectAsync();
+            var products = enumerator.ToList();
+
+            var words = products
+                .SelectMany(x => x.Description
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(x => x.Trim('!', '?', '.', ',', ':', ';')))
+                .ToList();
+
+            var groups = words
+                .GroupBy(word => word)
+                .Select(g => new KeyValuePair<string, int>(g.Key, g.Count()))
+                .OrderByDescending(_ => _.Value)
+                .ToList();
+
+            if (statistics != null)
+            {
+                statistics.Clear();
+                foreach (var group in groups)
+                {
+                    statistics.Add(group.Key, group.Value);
+                }
+            }
+
+            var common = groups
+                .Skip(skip ?? 0)
+                .Take(take ?? groups.Count)
+                .Select(_ => _.Key)
+                .ToList();
+
+            return common;
         }
     }
 }

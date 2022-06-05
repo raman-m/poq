@@ -26,23 +26,16 @@ namespace Poq.BackendApi.Controllers
         [ProducesResponseType(typeof(ProductsResponse), (int)HttpStatusCode.OK)]
         public async Task<ProductsResponse> GetAsync()
         {
-            var model = new ProductsResponse();
             try
             {
                 var collection = await _service.AllAsync();
-                model.Products = collection;
-
-                var pricing = _service.GetPricingStatistics(collection);
-                model.MinPrice = pricing.Item1;
-                model.MaxPrice = pricing.Item2;
-
-                model.Sizes = _service.GetAllSizes(collection);
+                return await BuildModel(collection);
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "{Controller} : \"{Message}\"", nameof(ProductsController), e.Message);
+                return ProductsResponse.Empty;
             }
-            return model;
         }
 
         // GET: /filter
@@ -55,7 +48,6 @@ namespace Poq.BackendApi.Controllers
             [FromQuery] Sizes? size,
             [FromQuery] MultiValueParam? highlight)
         {
-            var model = new ProductsResponse();
             try
             {
                 ICollection<Product> collection = Array.Empty<Product>();
@@ -68,18 +60,29 @@ namespace Poq.BackendApi.Controllers
                 {
                     collection = await _service.FilterAsync(minprice, maxprice, size);
                 }
-                model.Products = collection;
-
-                var pricing = _service.GetPricingStatistics(collection);
-                model.MinPrice = pricing.Item1;
-                model.MaxPrice = pricing.Item2;
-
-                model.Sizes = _service.GetAllSizes(collection);
+                return await BuildModel(collection);
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "{Controller} : \"{Message}\"", nameof(ProductsController), e.Message);
+                return ProductsResponse.Empty;
             }
+        }
+
+        private async Task<ProductsResponse> BuildModel(ICollection<Product> collection)
+        {
+            var model = new ProductsResponse();
+            model.Products = collection;
+
+            var pricing = _service.GetPricingStatistics(collection);
+            model.MinPrice = pricing.Item1;
+            model.MaxPrice = pricing.Item2;
+
+            model.Sizes = _service.GetAllSizes(collection);
+
+            // Without statistics, get 10 most common words in the product descriptions, excluding the most common 5.
+            model.CommonWords = await _service.GetCommonWordsAsync(null, 5, 10); // so, skip 5 and take 10 elements
+
             return model;
         }
     }

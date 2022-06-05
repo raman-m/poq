@@ -196,4 +196,30 @@ public class ProductsServiceTests
         Assert.Equal("4", actual.First()); // "4" is in top(1)
         Assert.Equal("4", stats.Skip(skip).First().Key); // "4" is in top(1)
     }
+
+    [Fact]
+    public void HighlightDescription_DefaultTag_HighlightsSuccessfully()
+    {
+        // Arrange
+        const string tag = "em";
+        var products = new List<Product>
+        {
+            new Product { Description = "These trousers make a perfect pair with green or blue shirts." },
+        };
+        var words = new string[] { "green", "blue" };
+
+        // Act
+        sut.HighlightDescription(products, words); // default tag is <em>
+
+        // Assert
+        Assert.All(products, p =>
+        {
+            var phrase = p.Description;
+            Assert.All(words, word =>
+            {
+                if (phrase.Contains(word))
+                    Assert.Contains($"<{tag}>{word}</{tag}>", phrase);
+            });
+        });
+    }
 }

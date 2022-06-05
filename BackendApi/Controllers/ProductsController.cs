@@ -60,7 +60,7 @@ namespace Poq.BackendApi.Controllers
                 {
                     collection = await _service.FilterAsync(minprice, maxprice, size);
                 }
-                return await BuildModel(collection);
+                return await BuildModel(collection, highlight);
             }
             catch (Exception e)
             {
@@ -69,7 +69,7 @@ namespace Poq.BackendApi.Controllers
             }
         }
 
-        private async Task<ProductsResponse> BuildModel(ICollection<Product> collection)
+        private async Task<ProductsResponse> BuildModel(ICollection<Product> collection, MultiValueParam? highlight = null)
         {
             var model = new ProductsResponse();
             model.Products = collection;
@@ -82,6 +82,9 @@ namespace Poq.BackendApi.Controllers
 
             // Without statistics, get 10 most common words in the product descriptions, excluding the most common 5.
             model.CommonWords = await _service.GetCommonWordsAsync(null, 5, 10); // so, skip 5 and take 10 elements
+
+            if (highlight != null)
+                _service.HighlightDescription(collection, highlight);
 
             return model;
         }

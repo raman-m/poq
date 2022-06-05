@@ -28,9 +28,9 @@ namespace Poq.BackendApi.Tests.Unit
             // Arrange
             var products = new List<Product>
             {
-                    new Product { Title = "A", Description = "A." },
-                    new Product { Title = "B", Description = "B B." },
-                    new Product { Title = "C", Description = "C C C." },
+                new Product { Title = "A", Description = "A." },
+                new Product { Title = "B", Description = "B B." },
+                new Product { Title = "C", Description = "C C C." },
             };
             // AllAsync(), FilterAsync()
             productsServiceMock.Setup(setupMethod).ReturnsAsync(products);
@@ -63,10 +63,10 @@ namespace Poq.BackendApi.Tests.Unit
                 .Returns(new Sizes[] { Sizes.Small, Sizes.Medium });
         }
 
-        private void ArrangeGettingCommonWords(ICollection<string> topWords)
+        private void ArrangeGettingCommonWords(ICollection<string>? topWords = null)
         {
             productsServiceMock.Setup(x => x.GetCommonWordsAsync(It.IsAny<Dictionary<string, int>>(), It.IsAny<int?>(), It.IsAny<int?>()))
-                .ReturnsAsync(topWords);
+                .ReturnsAsync(topWords ?? Array.Empty<string>());
         }
 
         private void AssertCalculatingPrices(int expectedMinPrice, int expectedMaxPrice, ProductsResponse actual)
@@ -222,6 +222,53 @@ namespace Poq.BackendApi.Tests.Unit
             AssertCalculatingPrices(minPrice, maxPrice, actual);
             AssertGettingAllSizes();
             AssertGettingCommonWords(expectedWords, actual.CommonWords);
+        }
+
+        [Fact]
+        public async Task GetAsync_WhileBuildingModel_DoesHighlightAnyDescriptions()
+        {
+            // Arrange
+            ArrangeCalculatingPrices(out int minPrice, out int maxPrice);
+            ArrangeGettingAllSizes();
+            ArrangeGettingCommonWords();
+
+            productsServiceMock.Setup(x => x.AllAsync()).ReturnsAsync(Array.Empty<Product>());
+            productsServiceMock.Setup(x => x.HighlightDescription(It.IsAny<ICollection<Product>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()));
+
+            // Act
+            ProductsResponse actual = await sut.GetAsync();
+
+            // Assert
+            Assert.NotNull(actual);
+            productsServiceMock.Verify(x => x.AllAsync());
+
+            // Assert : DoesHighlightAnyDescriptions
+            productsServiceMock.Verify(x => x.HighlightDescription(It.IsAny<ICollection<Product>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()),
+                Times.Never());
+        }
+
+        [Fact]
+        public async Task FilterAsync_WhileBuildingModel_HighlightsDescriptions()
+        {
+            // Arrange
+            ArrangeCalculatingPrices(out int minPrice, out int maxPrice);
+            ArrangeGettingAllSizes();
+            ArrangeGettingCommonWords();
+
+            productsServiceMock.Setup(x => x.FilterAsync(It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<Sizes?>())).ReturnsAsync(Array.Empty<Product>());
+            productsServiceMock.Setup(x => x.HighlightDescription(It.IsAny<ICollection<Product>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()));
+
+            // Act
+            var highlight = new MultiValueParam(Array.Empty<string>());
+            ProductsResponse actual = await sut.FilterAsync(1, int.MaxValue, null, highlight);
+
+            // Assert
+            Assert.NotNull(actual);
+            productsServiceMock.Verify(x => x.FilterAsync(It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<Sizes?>()));
+
+            // Assert : HighlightsDescriptions
+            productsServiceMock.Verify(x => x.HighlightDescription(It.IsAny<ICollection<Product>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>()),
+                Times.Once());
         }
     }
 }

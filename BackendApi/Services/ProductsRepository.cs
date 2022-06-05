@@ -66,14 +66,14 @@ public class ProductsRepository : IProductsRepository
     {
         await WarmupAsync();
 
-        return productsTable.Values;
+        return Copy(productsTable.Values);
     }
 
     public async Task<IEnumerable<Product>> SelectAsync(Func<Product, bool> predicate)
     {
         await WarmupAsync();
 
-        return productsTable.Values.Where(predicate);
+        return Copy(productsTable.Values.Where(predicate));
     }
 
     public async Task<Product> GetAsync(int id)
@@ -90,5 +90,17 @@ public class ProductsRepository : IProductsRepository
         await WarmupAsync();
 
         return productsTable.Count;
+    }
+
+    private IEnumerable<Product> Copy(IEnumerable<Product> from)
+    {
+        if (from == null)
+            return Array.Empty<Product>();
+
+        var list = from.ToList();
+        var length = list.Count;
+        List<Product> copied = new(length);
+        list.ForEach(el => copied.Add(new Product(el))); // clone with deep copying of the Product objects via copy constructor
+        return copied;
     }
 }

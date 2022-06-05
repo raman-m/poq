@@ -77,7 +77,7 @@ namespace Poq.BackendApi.Services
             return sizes;
         }
 
-        public async Task<ICollection<string>> GetCommonWordsAsync(Dictionary<string, int>? statistics = null, int? skip = null, int? take = null)
+        public async Task<ICollection<string>> GetCommonWordsAsync(IDictionary<string, int>? statistics = null, int? skip = null, int? take = null)
         {
             var enumerator = await repository.SelectAsync();
             var products = enumerator.ToList();
@@ -110,6 +110,26 @@ namespace Poq.BackendApi.Services
                 .ToList();
 
             return common;
+        }
+
+        public void HighlightDescription(ICollection<Product> products, IEnumerable<string> words, string tag = "em")
+        {
+            if (products == null || words == null || !words.Any())
+                return;
+
+            foreach (var product in products)
+            {
+                var source = product.Description;
+
+                var highlighted = words.Aggregate(source,
+                    (phrase, word) =>
+                    {
+                        var wrapped = $"<{tag}>{word}</{tag}>";
+                        return phrase.Contains(wrapped) ? phrase : phrase.Replace(word, wrapped);
+                    });
+
+                product.Description = highlighted;
+            }
         }
     }
 }
